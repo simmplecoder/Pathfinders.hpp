@@ -26,14 +26,14 @@ namespace com::github::coderodde::pathfinders {
 			HeapNode<Node, Weight>*,
 			std::vector<HeapNode<Node, Weight>*>,
 			HeapNodeComparator<Node, Weight>>& OPEN_FORWARD,
-			std::unordered_set<Node>& CLOSED,
-			std::unordered_map<Node, Weight>& distance_map_forward,
-			std::unordered_map<Node, Weight>& distance_map_backward,
-			std::unordered_map<Node, Node*>& parent_map_forward,
-			Node const& current_node,
-			Node const& target_node,
-			Weight best_cost,
-			const Node** touch_node_ptr) {
+		std::unordered_set<Node>& CLOSED,
+		std::unordered_map<Node, Weight>& distance_map_forward,
+		std::unordered_map<Node, Weight>& distance_map_backward,
+		std::unordered_map<Node, Node*>& parent_map_forward,
+		Node const& current_node,
+		Node const& target_node,
+		Weight& best_cost,
+		const Node** touch_node_ptr) {
 
 		std::unordered_set<Node>* children =
 			graph.getChildNodesOf(current_node);
@@ -87,7 +87,7 @@ namespace com::github::coderodde::pathfinders {
 		std::unordered_map<Node, Node*>& parent_map_backward,
 		Node const& current_node,
 		Node const& source_node,
-		Weight best_cost,
+		Weight& best_cost,
 		const Node** touch_node_ptr) {
 
 		std::unordered_set<Node>* parents =
@@ -248,8 +248,8 @@ namespace com::github::coderodde::pathfinders {
 									  *heuristic_function,
 									  OPEN_BACKWARD,
 									  CLOSED,
-									  distance_map_backward,
 									  distance_map_forward,
+									  distance_map_backward,
 									  parent_map_backward,
 									  current_node,
 									  source_node,

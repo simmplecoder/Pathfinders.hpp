@@ -284,7 +284,7 @@ int main() {
 		int s = 0;
 		int t = 2;
 
-		path =/*
+		path =
 			findShortestPath()
 			.in(graph_data.getGraph())
 			.withWeights(graph_data.getWeightFunction())
@@ -292,14 +292,15 @@ int main() {
 			.to(target_node)
 			.withHeuristicFunction(graph_data.getHeuristicFunction())
 			.usingBidirectionalAstar();
-			*/
+			
+			/*
 			findShortestPath()
 			.in(my_graph)
 			.withWeights(my_wh)
 			.from(s)
 			.to(t)
 			.withHeuristicFunction(hf)
-			.usingBidirectionalAstar();
+			.usingBidirectionalAstar();*/
 
 		end_time = ms.milliseconds();
 
