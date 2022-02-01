@@ -69,7 +69,8 @@ namespace com::github::coderodde::pathfinders {
 
 			for (Node const& child : *children) {
 				if (CLOSED.contains(child)) {
-					// The optimal distance from source_node to child is known. Omit:
+					// The optimal distance from source_node to child
+					// is known. Omit:
 					continue;
 				}
 
@@ -77,7 +78,9 @@ namespace com::github::coderodde::pathfinders {
 					distance_map[current_node] +
 					weight_function.getWeight(current_node, child);
 
-				if (!parent_map.contains(child) || distance < distance_map[child]) {
+				if (!parent_map.contains(child) 
+					|| distance < distance_map[child]) {
+
 					OPEN.push(new HeapNode<Node, Weight>(child, distance));
 					distance_map[child] = distance;
 					Node* elem_ptr = new Node{ current_node };

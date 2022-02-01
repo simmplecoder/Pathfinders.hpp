@@ -50,7 +50,10 @@ namespace com::github::coderodde::pathfinders::util {
 			Weight total_distance = {};
 
 			for (std::size_t i = 0; i < nodes_.size() - 1; ++i) {
-				total_distance += weight_function_.getWeight(nodes_[i], nodes_[i + 1]);
+				total_distance += 
+					weight_function_.getWeight(
+						nodes_[i], 
+						nodes_[i + 1]);
 			}
 
 			return total_distance;
@@ -142,7 +145,12 @@ namespace com::github::coderodde::pathfinders::util {
 	template<typename Node = int>
 	std::string buildPathNotExistsErrorMessage(Node source_node, Node target_node) {
 		std::stringstream ss;
-		ss << "There is no path from " << source_node << " to " << target_node << ".";
+		ss << "There is no path from "
+		   << source_node 
+		   << " to " 
+		   << target_node 
+		   << ".";
+
 		return ss.str();
 	}
 

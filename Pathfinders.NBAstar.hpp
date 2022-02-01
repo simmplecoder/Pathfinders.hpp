@@ -17,6 +17,116 @@ namespace com::github::coderodde::pathfinders {
 	using namespace com::github::coderodde::directed_graph;
 	using namespace com::github::coderodde::pathfinders::util;
 
+	template<typename Node = int, typename Weight = double> 
+	void stabilizeForward(
+		DirectedGraph<Node>& graph,
+		DirectedGraphWeightFunction<Node, Weight>& weight_function,
+		HeuristicFunction<Node, Weight>& heuristic_function,
+		std::priority_queue<
+			HeapNode<Node, Weight>*,
+			std::vector<HeapNode<Node, Weight>*>,
+			HeapNodeComparator<Node, Weight>>& OPEN_FORWARD,
+			std::unordered_set<Node>& CLOSED,
+			std::unordered_map<Node, Weight>& distance_map_forward,
+			std::unordered_map<Node, Weight>& distance_map_backward,
+			std::unordered_map<Node, Node*>& parent_map_forward,
+			Node const& current_node,
+			Node const& target_node,
+			Weight best_cost,
+			const Node** touch_node_ptr) {
+
+		std::unordered_set<Node>* children =
+			graph.getChildNodesOf(current_node);
+
+		for (Node const& child_node : *children) {
+			if (CLOSED.contains(child_node)) {
+				continue;
+			}
+
+			Weight tentative_distance =
+				distance_map_forward[current_node] +
+				weight_function.getWeight(current_node, child_node);
+
+			if (!distance_map_forward.contains(child_node)
+				|| distance_map_forward[child_node] > tentative_distance) {
+				OPEN_FORWARD.push(
+					new HeapNode<Node, Weight>(
+						child_node,
+						tentative_distance + 
+						heuristic_function.estimate(child_node, target_node)));
+
+				distance_map_forward[child_node] = tentative_distance;
+				Node* node_ptr = new Node{ current_node };
+				parent_map_forward[child_node] = node_ptr;
+
+				if (distance_map_backward.contains(child_node)) {
+					Weight path_length = tentative_distance +
+						distance_map_backward[child_node];
+
+					if (best_cost > path_length) {
+						best_cost = path_length;
+						*touch_node_ptr = &child_node;
+					}
+				}
+			}
+		}
+	}
+
+	template<typename Node = int, typename Weight = double>
+	void stabilizeBackward(
+		DirectedGraph<Node>& graph,
+		DirectedGraphWeightFunction<Node, Weight>& weight_function,
+		HeuristicFunction<Node, Weight>& heuristic_function,
+		std::priority_queue<
+			HeapNode<Node, Weight>*,
+			std::vector<HeapNode<Node, Weight>*>,
+			HeapNodeComparator<Node, Weight>>& OPEN_BACKWARD,
+		std::unordered_set<Node>& CLOSED,
+		std::unordered_map<Node, Weight>& distance_map_forward,
+		std::unordered_map<Node, Weight>& distance_map_backward,
+		std::unordered_map<Node, Node*>& parent_map_backward,
+		Node const& current_node,
+		Node const& source_node,
+		Weight best_cost,
+		const Node** touch_node_ptr) {
+
+		std::unordered_set<Node>* parents =
+			graph.getParentNodesOf(current_node);
+
+		for (Node const& parent_node : *parents) {
+			if (CLOSED.contains(parent_node)) {
+				continue;
+			}
+
+			Weight tentative_distance =
+				distance_map_backward[current_node] +
+				weight_function.getWeight(parent_node, current_node);
+
+			if (!distance_map_backward.contains(parent_node)
+				|| distance_map_backward[parent_node] > tentative_distance) {
+				OPEN_BACKWARD.push(
+					new HeapNode<Node, Weight>(
+						parent_node,
+						tentative_distance +
+						heuristic_function.estimate(parent_node, source_node)));
+
+				distance_map_backward[parent_node] = tentative_distance;
+				Node* node_ptr = new Node{ current_node };
+				parent_map_backward[parent_node] = node_ptr;
+
+				if (distance_map_forward.contains(parent_node)) {
+					Weight path_length = tentative_distance +
+						distance_map_forward[parent_node];
+
+					if (best_cost > path_length) {
+						best_cost = path_length;
+						*touch_node_ptr = &parent_node;
+					}
+				}
+			}
+		}
+	}
+
 	template<typename Node = int, typename Weight = double>
 	Path<Node, Weight>
 		runBidirectionalAstarAlgorithm(
@@ -46,7 +156,7 @@ namespace com::github::coderodde::pathfinders {
 		std::unordered_map<Node, Node*> parent_map_forward;
 		std::unordered_map<Node, Node*> parent_map_backward;
 
-		OPEN_FORWARD.push(new HeapNode<Node, Weight>(source_node, Weight{}));
+		OPEN_FORWARD .push(new HeapNode<Node, Weight>(source_node, Weight{}));
 		OPEN_BACKWARD.push(new HeapNode<Node, Weight>(target_node, Weight{}));
 
 		distance_map_forward[source_node] = Weight{};
@@ -89,50 +199,27 @@ namespace com::github::coderodde::pathfinders {
 					- heuristic_function->estimate(current_node, source_node)
 					>= best_cost) {
 					// Reject the 'current_node'!
-				}
-				else {
+				} else {
 					// Stabilize the 'current_node':
-					std::unordered_set<Node>* children =
-						graph.getChildNodesOf(current_node);
-
-					for (Node const& child_node : *children) {
-						if (CLOSED.contains(child_node)) {
-							continue;
-						}
-
-						Weight tentative_distance =
-							distance_map_forward[current_node] +
-							weight_function.getWeight(current_node, child_node);
-
-						if (!distance_map_forward.contains(child_node)
-							|| distance_map_forward[child_node] > tentative_distance) {
-							OPEN_FORWARD.push(
-								new HeapNode<Node, Weight>(
-									child_node,
-									tentative_distance));
-
-							distance_map_forward[child_node] = tentative_distance;
-							Node* node_ptr = new Node{ current_node };
-							parent_map_forward[child_node] = node_ptr;
-
-							if (distance_map_backward.contains(child_node)) {
-								Weight path_length = tentative_distance +
-									distance_map_backward[child_node];
-
-								if (best_cost > path_length) {
-									best_cost = path_length;
-									touch_node = &child_node;
-								}
-							}
-						}
-					}
+					stabilizeForward<Node, Weight>(
+									 graph,
+									 weight_function,
+									 *heuristic_function,
+									 OPEN_FORWARD,
+									 CLOSED,
+									 distance_map_forward,
+									 distance_map_backward,
+									 parent_map_forward,
+									 current_node,
+									 target_node,
+									 best_cost,
+									 &touch_node);
 				}
 
 				if (!OPEN_FORWARD.empty()) {
 					f_cost_forward = OPEN_FORWARD.top()->getDistance();
 				}
-			}
-			else {
+			} else {
 				HeapNode<Node, Weight>* top_heap_node = OPEN_BACKWARD.top();
 				OPEN_BACKWARD.pop();
 				Node current_node = top_heap_node->getElement();
@@ -155,40 +242,19 @@ namespace com::github::coderodde::pathfinders {
 				}
 				else {
 					// Stabilize the 'current_node':
-					std::unordered_set<Node>* parents =
-						graph.getParentNodesOf(current_node);
-
-					for (Node const& parent_node : *parents) {
-						if (CLOSED.contains(parent_node)) {
-							continue;
-						}
-
-						Weight tentative_distance =
-							distance_map_backward[current_node] +
-							weight_function.getWeight(parent_node, current_node);
-
-						if (!distance_map_backward.contains(parent_node)
-							|| distance_map_backward[parent_node] > tentative_distance) {
-							OPEN_BACKWARD.push(
-								new HeapNode<Node, Weight>(
-									parent_node,
-									tentative_distance));
-
-							distance_map_backward[parent_node] = tentative_distance;
-							Node* node_ptr = new Node{ current_node };
-							parent_map_backward[parent_node] = node_ptr;
-
-							if (distance_map_forward.contains(parent_node)) {
-								Weight path_length = tentative_distance +
-									distance_map_forward[parent_node];
-
-								if (best_cost > path_length) {
-									best_cost = path_length;
-									touch_node = &parent_node;
-								}
-							}
-						}
-					}
+					stabilizeBackward<Node, Weight>(
+									  graph,
+									  weight_function,
+									  *heuristic_function,
+									  OPEN_BACKWARD,
+									  CLOSED,
+									  distance_map_backward,
+									  distance_map_forward,
+									  parent_map_backward,
+									  current_node,
+									  source_node,
+									  best_cost,
+									  &touch_node);
 				}
 
 				if (!OPEN_BACKWARD.empty()) {
