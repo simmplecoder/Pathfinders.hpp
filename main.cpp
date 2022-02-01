@@ -263,15 +263,42 @@ int main() {
 		//// NBA* ///////////////////////////////////////////////////////////// 
 		std::cout << "--- Bidirectional A* (NBA*) algorithm: ---\n";
 
+		DirectedGraph my_graph;
+		my_graph.addNode(0);
+		my_graph.addNode(1);
+		my_graph.addNode(2);
+		my_graph.addArc(0, 1);
+		my_graph.addArc(1, 2);
+
+		DirectedGraphWeightFunction my_wh;
+		my_wh.addWeight(0, 1, 1.0);
+		my_wh.addWeight(1, 2, 2.0);
+		std::unordered_map<int, EuclideanCoordinates> mmm;
+		mmm[0] = EuclideanCoordinates();
+		mmm[1] = EuclideanCoordinates(0.5, 0.0);
+		mmm[2] = EuclideanCoordinates(1.0, 0.0);
+		MyHeuristicFunction hf(mmm);
+
 		start_time = ms.milliseconds();
 
-		path =
+		int s = 0;
+		int t = 2;
+
+		path =/*
 			findShortestPath()
 			.in(graph_data.getGraph())
 			.withWeights(graph_data.getWeightFunction())
 			.from(source_node)
 			.to(target_node)
 			.withHeuristicFunction(graph_data.getHeuristicFunction())
+			.usingBidirectionalAstar();
+			*/
+			findShortestPath()
+			.in(my_graph)
+			.withWeights(my_wh)
+			.from(s)
+			.to(t)
+			.withHeuristicFunction(hf)
 			.usingBidirectionalAstar();
 
 		end_time = ms.milliseconds();
