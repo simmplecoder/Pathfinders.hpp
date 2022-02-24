@@ -91,11 +91,15 @@ namespace com::github::coderodde::pathfinders::util {
 
         }
 
-        [[nodiscard]] Node const& getElement() noexcept {
+        bool operator<(HeapNode<Node, Weight> other) const noexcept {
+            return distance_ < other.distance_;
+        }
+
+        [[nodiscard]] Node getElement() const noexcept {
             return element_;
         }
 
-        [[nodiscard]] Weight const& getDistance() noexcept {
+        [[nodiscard]] Weight getDistance() const noexcept {
             return distance_;
         }
     };

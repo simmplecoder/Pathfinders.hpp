@@ -290,6 +290,34 @@ int main() {
     catch (PathDoesNotExistException const& err) {
         std::cout << err.what() << "\n";
     }
+    /*
+    DirectedGraph g2;
+    DirectedGraphWeightFunction w2;
 
+    g2.addNode(1);
+    g2.addNode(2);
+    g2.addNode(3);
+
+    g2.addArc(1, 2);
+    g2.addArc(2, 3);
+
+    w2.addWeight(1, 2, 1.0);
+    w2.addWeight(2, 3, 2.0);
+
+    std::unordered_map<int, EuclideanCoordinates> coordinate_map;
+    coordinate_map[1] = EuclideanCoordinates(0, 0);
+    coordinate_map[2] = EuclideanCoordinates(0.5, 0.5);
+    coordinate_map[3] = EuclideanCoordinates(1, 1);
+
+    MyHeuristicFunction hf2(coordinate_map);
+    int source_node = 1;
+    int target_node = 3;
+    runBidirectionalAstarAlgorithm<int, double>(
+        g2, 
+        w2, 
+        &hf2, 
+        source_node, 
+        target_node);
+        */
     return 0;
 }

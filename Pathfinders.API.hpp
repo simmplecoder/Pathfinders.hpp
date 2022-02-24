@@ -206,7 +206,7 @@ namespace com::github::coderodde::pathfinders::api {
     };
 
     template<typename Node = int, typename Weight = double>
-    GraphSelector<Node, Weight> findShortestPath() {
+    GraphSelector<Node, Weight> findShortestPath() {    
         return GraphSelector<Node, Weight>{};
     }
 }
