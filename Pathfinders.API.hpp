@@ -9,7 +9,7 @@
 #include "Pathfinders.SharedUtils.hpp"
 
 namespace com::github::coderodde::pathfinders::api {
-
+    
     using namespace com::github::coderodde::directed_graph;
     using namespace com::github::coderodde::pathfinders::util;
 
@@ -209,6 +209,6 @@ namespace com::github::coderodde::pathfinders::api {
     GraphSelector<Node, Weight> findShortestPath() {    
         return GraphSelector<Node, Weight>{};
     }
-}
+} // End of namespace com::github::coderodde::pathfinders::api.
 
 #endif // COM_GITHUB_CODERODDE_GRAPH_PATHFINDERS_API_HPP

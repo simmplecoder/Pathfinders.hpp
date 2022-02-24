@@ -3,6 +3,7 @@
 
 #include "DirectedGraph.hpp"
 #include <queue>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -10,6 +11,24 @@
 using namespace com::github::coderodde::directed_graph;
 
 namespace com::github::coderodde::pathfinders::util {
+
+    template<typename Node = int, typename Weight = double>
+    struct Info {
+        bool closed;
+        std::optional<Weight> distance_forward;
+        std::optional<Weight> distance_backward;
+        std::optional<Node> parent_forward;
+        std::optional<Node> parent_backward;
+
+        Info() : closed{ false },
+            distance_forward{ std::nullopt },
+            distance_backward{ std::nullopt },
+            parent_forward{ std::nullopt },
+            parent_backward{ std::nullopt }
+        {
+
+        }
+    };
 
     template<typename Node = int, typename Weight = double>
     class HeuristicFunction {
@@ -91,8 +110,8 @@ namespace com::github::coderodde::pathfinders::util {
 
         }
 
-        bool operator<(HeapNode<Node, Weight> other) const noexcept {
-            return distance_ < other.distance_;
+        bool operator<(const HeapNode<Node, Weight>& other) const noexcept {
+            return distance_ > other.distance_;
         }
 
         [[nodiscard]] Node getElement() const noexcept {
@@ -179,6 +198,38 @@ namespace com::github::coderodde::pathfinders::util {
             path_nodes.push_back(*next_node);
             previous_node = *next_node;
         }
+    }
+
+    template<typename Node = int, typename Weight = double>
+    Path<Node, Weight> 
+        tracebackPath(
+            const Node& touch_node,
+            std::unordered_map<Node, Info<Node, Weight>>& info,
+            DirectedGraphWeightFunction<Node, Weight>& weight_function) {
+        std::vector<Node> path_nodes;
+        Node previous_node = touch_node;
+        path_nodes.push_back(touch_node);
+
+        while (true) {
+            std::optional<Node> next_node = info[previous_node].parent_forward;
+
+            if (!next_node.has_value()) {
+                std::reverse(path_nodes.begin(), path_nodes.end());
+                break;
+            }
+
+            path_nodes.push_back(next_node.value());
+            previous_node = next_node.value();
+        }
+
+        std::optional<Node> next_node = info[touch_node].parent_backward;
+
+        while (next_node.has_value()) {
+            path_nodes.push_back(next_node.value());
+            next_node = info[next_node.value()].parent_backward;
+        }
+
+        return Path<Node, Weight>{path_nodes, weight_function};
     }
 
     template<typename Node = int, typename Weight = double>

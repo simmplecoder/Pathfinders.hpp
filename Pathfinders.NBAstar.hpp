@@ -15,26 +15,10 @@
 
 namespace com::github::coderodde::pathfinders {
 
-    template<typename Node = int, typename Weight = double>
-    struct Info {
-        bool closed;
-        std::optional<Weight> distance_forward;
-        std::optional<Weight> distance_backward;
-        std::optional<Node> parent_forward;
-        std::optional<Node> parent_backward;
-
-        Info() : closed{false},
-            distance_forward { std::nullopt },
-            distance_backward{ std::nullopt },
-            parent_forward { std::nullopt },
-            parent_backward{ std::nullopt }, {
-        }
-    };
-
     using namespace com::github::coderodde::directed_graph;
     using namespace com::github::coderodde::pathfinders::util;
 
-    template<typename Node = int, typename Weight = double> 
+    template<typename Node = int, typename Weight = double>
     void stabilizeForward(
         DirectedGraph<Node>& graph,
         DirectedGraphWeightFunction<Node, Weight>& weight_function,
@@ -55,26 +39,26 @@ namespace com::github::coderodde::pathfinders {
             }
 
             Weight tentative_distance =
-                info[current_node].distance_forward +
+                info[current_node].distance_forward.value() +
                 weight_function.getWeight(current_node, child_node);
 
-            if (!info.contains(child_node) 
-                || info[child_node].distance_forward > tentative_distance) {
+            if (!info[child_node].distance_forward.has_value()
+                ||
+                info[child_node].distance_forward > tentative_distance) {
 
-                HeapNode<Node, Weight> 
-                    node{child_node, 
-                         tentative_distance + 
-                         heuristic_function.estimate(child_node, target_node)};
-                
+                HeapNode<Node, Weight>
+                    node{ child_node,
+                         tentative_distance +
+                         heuristic_function.estimate(child_node, target_node) };
+
                 open_forward.emplace(node);
 
                 info[child_node].distance_forward = tentative_distance;
                 info[child_node].parent_forward = current_node;
 
-                if (info)
-                if (distance_map_backward.contains(child_node)) {
+                if (info[child_node].distance_backward.has_value()) {
                     Weight path_length = tentative_distance +
-                        distance_map_backward[child_node];
+                        info[child_node].distance_backward.value();
 
                     if (best_cost > path_length) {
                         best_cost = path_length;
@@ -91,10 +75,7 @@ namespace com::github::coderodde::pathfinders {
         DirectedGraphWeightFunction<Node, Weight>& weight_function,
         HeuristicFunction<Node, Weight>& heuristic_function,
         std::priority_queue<HeapNode<Node, Weight>>& open_backward,
-        std::unordered_set<Node>& closed,
-        std::unordered_map<Node, Weight>& distance_map_forward,
-        std::unordered_map<Node, Weight>& distance_map_backward,
-        std::unordered_map<Node, Node*>& parent_map_backward,
+        std::unordered_map<Node, Info<Node, Weight>>& info,
         Node const& current_node,
         Node const& source_node,
         Weight& best_cost,
@@ -104,16 +85,16 @@ namespace com::github::coderodde::pathfinders {
             graph.getParentNodesOf(current_node);
 
         for (Node const& parent_node : *parents) {
-            if (closed.contains(parent_node)) {
+            if (info[parent_node].closed) {
                 continue;
             }
 
             Weight tentative_distance =
-                distance_map_backward[current_node] +
+                info[current_node].distance_backward.value() +
                 weight_function.getWeight(parent_node, current_node);
 
-            if (!distance_map_backward.contains(parent_node)
-                || distance_map_backward[parent_node] > tentative_distance) {
+            if (!info[parent_node].distance_backward.has_value()
+                || info[parent_node].distance_backward > tentative_distance) {
                 HeapNode<Node, Weight>
                     node{ parent_node,
                          tentative_distance +
@@ -121,13 +102,13 @@ namespace com::github::coderodde::pathfinders {
 
                 open_backward.emplace(node);
 
-                distance_map_backward[parent_node] = tentative_distance;
-                Node* node_ptr = new Node{ current_node };
-                parent_map_backward[parent_node] = node_ptr;
+                info[parent_node].distance_backward = tentative_distance;
+                info[parent_node].parent_backward = current_node;
 
-                if (distance_map_forward.contains(parent_node)) {
-                    Weight path_length = tentative_distance +
-                        distance_map_forward[parent_node];
+                if (info[parent_node].distance_forward.has_value()) {
+                    Weight path_length = 
+                        tentative_distance + 
+                        info[parent_node].distance_forward.value();
 
                     if (best_cost > path_length) {
                         best_cost = path_length;
@@ -185,11 +166,11 @@ namespace com::github::coderodde::pathfinders {
 
                 info[current_node].closed = true;
 
-                if (info[current_node].distance_forward +
+                if (info[current_node].distance_forward.value() +
                         heuristic_function->
                             estimate(current_node, target_node) >= best_cost
                     ||
-                    info[current_node].distance_forward +
+                    info[current_node].distance_forward.value() +
                         f_cost_backward -
                             heuristic_function->
                                 estimate(current_node, source_node)) {
@@ -219,15 +200,16 @@ namespace com::github::coderodde::pathfinders {
                     continue;
                 }
 
-                int[current_node].closed = true;
+                info[current_node].closed = true;
 
-                if (info[current_node].distance_backward + 
+                if (info[current_node].distance_backward.value() +
                     heuristic_function  
                     ->estimate(current_node, source_node)
                     >= best_cost 
                     ||
-                    info[current_node].distance_backward + f_cost_forward -
-                    heuristic_function->estimate(current_node, target_node) {
+                    info[current_node].distance_backward.value() +
+                    f_cost_forward -
+                    heuristic_function->estimate(current_node, target_node)) {
                     // Reject the 'current_node'!
                 } else {
                     // Stabilize the 'current_node':
@@ -258,12 +240,9 @@ namespace com::github::coderodde::pathfinders {
         Path<Node, Weight> path =
             tracebackPath(
                 *touch_node,
-                parent_map_forward,
-                parent_map_backward,
+                info,
                 weight_function);
 
-        cleanParentMap(parent_map_forward);
-        cleanParentMap(parent_map_backward);
         return path;
     }
 } // End of namespace 'com::github::coderodde::pathfinders'.

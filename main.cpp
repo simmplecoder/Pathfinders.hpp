@@ -1,6 +1,6 @@
 #include "DirectedGraph.hpp"
-#include "Pathfinders.API.hpp"
 #include "Pathfinders.SharedUtils.hpp"
+#include "Pathfinders.API.hpp"
 #include <chrono>
 #include <cstddef>
 #include <iostream>
