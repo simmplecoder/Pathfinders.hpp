@@ -290,8 +290,7 @@ int main() {
     catch (PathDoesNotExistException const& err) {
         std::cout << err.what() << "\n";
     }
-    /*
-    // Used for debugging aid:
+
     DirectedGraph g2;
     DirectedGraphWeightFunction w2;
 
@@ -319,6 +318,6 @@ int main() {
         &hf2, 
         source_node, 
         target_node);
-        */
+        
     return 0;
 }

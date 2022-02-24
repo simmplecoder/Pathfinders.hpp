@@ -173,7 +173,8 @@ namespace com::github::coderodde::pathfinders {
                     info[current_node].distance_forward.value() +
                         f_cost_backward -
                             heuristic_function->
-                                estimate(current_node, source_node)) {
+                                estimate(current_node, source_node)
+                                >= best_cost) {
                     // Reject the 'current_node'.
                 } else {
                     // Stabilize the 'current_node':
@@ -209,7 +210,8 @@ namespace com::github::coderodde::pathfinders {
                     ||
                     info[current_node].distance_backward.value() +
                     f_cost_forward -
-                    heuristic_function->estimate(current_node, target_node)) {
+                    heuristic_function->estimate(current_node, target_node) >=
+                    best_cost) {
                     // Reject the 'current_node'!
                 } else {
                     // Stabilize the 'current_node':
