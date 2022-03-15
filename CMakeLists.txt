@@ -7,6 +7,8 @@ target_compile_features(demo PRIVATE cxx_std_20)
 
 find_package(fmt REQUIRED)
 find_package(Boost REQUIRED)
+find_package(spdlog REQUIRED)
 
 target_link_libraries(demo PRIVATE fmt::fmt)
 target_link_libraries(demo PRIVATE Boost::headers)
+target_link_libraries(demo PRIVATE spdlog::spdlog)

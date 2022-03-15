@@ -6,6 +6,7 @@
 #include <iostream>
 #include <random>
 #include <fmt/format.h>
+#include <boost/json.hpp>
 
 constexpr std::size_t NUMBER_OF_NODES = 100 * 1000;
 constexpr std::size_t NUMBER_OF_ARCS = 500 * 1000;
@@ -175,6 +176,7 @@ int main() {
     std::mt19937 mt(seed);
     const unsigned int run_count = 128;
     std::vector<std::chrono::nanoseconds> timings;
+    timings.reserve(run_count);
     for (std::size_t i = 0; i < run_count; ++i) {
         try {
             std::uniform_int_distribution<int> dist(0, NUMBER_OF_NODES - 1);
@@ -199,84 +201,6 @@ int main() {
             auto end_time = std::chrono::steady_clock::now();
 
             timings.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time));
-
-//            std::cout << "Path:\n";
-//
-//            for (size_t i = 0; i < path.length(); ++i) {
-//                std::cout << path[i] << "\n";
-//            }
-
-//            std::cout << "Path distance: " << path.distance() << "\n";
-//            std::cout << "Duration: " << (end_time - start_time) << " ms.\n\n";
-//        std::cout << "--- Bidirectional Dijkstra's algorithm: ---\n";
-//
-//        start_time = ms.milliseconds();
-//
-//        path =
-//            findShortestPath()
-//            .in(graph_data.getGraph())
-//            .withWeights(graph_data.getWeightFunction())
-//            .from(source_node)
-//            .to(target_node)
-//            .usingBidirectionalDijkstra();
-//
-//        end_time = ms.milliseconds();
-//
-//        std::cout << "Path:\n";
-//
-//        for (size_t i = 0; i < path.length(); ++i) {
-//            std::cout << path[i] << "\n";
-//        }
-//
-//        std::cout << "Path distance: " << path.distance() << "\n";
-//        std::cout << "Duration: " << (end_time - start_time) << " ms.\n\n";
-//        std::cout << "--- A* algorithm: ---\n";
-//
-//        start_time = ms.milliseconds();
-//
-//        path =
-//            findShortestPath()
-//            .in(graph_data.getGraph())
-//            .withWeights(graph_data.getWeightFunction())
-//            .from(source_node)
-//            .to(target_node)
-//            .withHeuristicFunction(graph_data.getHeuristicFunction())
-//            .usingAstar();
-//
-//        end_time = ms.milliseconds();
-//
-//        std::cout << "Path:\n";
-//
-//        for (size_t i = 0; i < path.length(); ++i) {
-//            std::cout << path[i] << "\n";
-//        }
-//
-//        std::cout << "Path distance: " << path.distance() << "\n";
-//        std::cout << "Duration: " << (end_time - start_time) << " ms.\n\n";
-//
-//        //// NBA* /////////////////////////////////////////////////////////////
-//        std::cout << "--- Bidirectional A* (NBA*) algorithm: ---\n";
-//        start_time = ms.milliseconds();
-//
-//        path =
-//            findShortestPath()
-//            .in(graph_data.getGraph())
-//            .withWeights(graph_data.getWeightFunction())
-//            .from(source_node)
-//            .to(target_node)
-//            .withHeuristicFunction(graph_data.getHeuristicFunction())
-//            .usingBidirectionalAstar();
-//
-//        end_time = ms.milliseconds();
-//
-//        std::cout << "Path:\n";
-//
-//        for (size_t i = 0; i < path.length(); ++i) {
-//            std::cout << path[i] << "\n";
-//        }
-//
-//        std::cout << "Path distance: " << path.distance() << "\n";
-//        std::cout << "Duration: " << (end_time - start_time) << " ms.\n\n";
         }
         catch (NodeNotPresentInGraphException const &err) {
             std::cout << err.what() << "\n";
