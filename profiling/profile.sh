@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 usage="$(basename "$0") [-g fgdir] [-h] -t target
 
 where:
@@ -18,11 +20,9 @@ while getopts 'g:ht:' option; do
             echo "$OPTARG is not executable"
             exit 1
          fi
-         echo "$OPTARG"
          target="$OPTARG"
          ;;
       g) fgroot="$OPTARG"
-         echo "$OPTARG"
          ;;
       :) printf "missing argument for -%s\n" "$OPTARG" >&2
          echo "$usage" >&2
@@ -38,7 +38,6 @@ shift $((OPTIND - 1))
 
 scpath="$fgroot/stackcollapse-perf.pl"
 fgpath="$fgroot/flamegraph.pl"
-echo "$scpath" "$fgpath"
 if ! [ "$(command -v "$scpath")" ]; then
   printf "could not find stackcollapse-perf.pl\n"
   exit 1
@@ -52,7 +51,7 @@ fi
 
 #filename=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss").perf
 filename=$(date -u +"%Y-%m-%dT%H:%M:%S%Z")
-perf record -g --call-graph=dwarf -F 99 "$target"
+perf record -g --call-graph=dwarf -F 99 -- "$target" "$filename".json
 perf script > "$filename".perf
 $scpath "$filename".perf > "$filename".collapsed
 $fgpath "$filename".collapsed > "$filename".svg

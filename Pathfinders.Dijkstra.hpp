@@ -18,8 +18,7 @@ namespace com::github::coderodde::pathfinders {
     using namespace com::github::coderodde::pathfinders::util;
 
     template<typename Node = int, typename Weight = double>
-    Path<Node, Weight>
-        runDijkstrasAlgorithm(DirectedGraph<Node>& graph,
+    Path<Node, Weight> runDijkstrasAlgorithm(DirectedGraph<Node>& graph,
             DirectedGraphWeightFunction<Node, Weight>& weight_function,
             Node& source_node,
             Node& target_node) {

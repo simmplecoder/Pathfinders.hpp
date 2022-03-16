@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
+#include <boost/json.hpp>
 
 namespace com::github::coderodde::directed_graph {
 
@@ -111,16 +112,40 @@ namespace com::github::coderodde::directed_graph {
             return &child_map_[node];
         }
 
-        std::unordered_set<Node> const& getNodes() const {
+        std::unordered_set<Node> const& getNodes() const noexcept {
             return nodes_;
         }
 
-        std::size_t getNumberOfNodes() const {
+        [[nodiscard]] std::size_t getNumberOfNodes() const noexcept {
             return nodes_.size();
         }
 
-        std::size_t getNumberOfArcs() const {
+        [[nodiscard]] std::size_t getNumberOfArcs() const noexcept {
             return number_of_arcs_;
+        }
+
+        [[nodiscard]] boost::json::object toJSON() const {
+            boost::json::object result;
+
+            boost::json::array nodes_array;
+            for (const auto& node: nodes_) {
+                nodes_array.push_back(node);
+            }
+
+            result["nodes"] = std::move(nodes_array);
+
+            boost::json::array arcs_array;
+            for (const auto& [node, parents]: parent_map_) {
+                for (const auto& parent: parents) {
+                    boost::json::object arc_desc;
+                    arc_desc["to"] = node;
+                    arc_desc["from"] = parent;
+                    arcs_array.push_back(arc_desc);
+                }
+            }
+
+            result["arcs"] = arcs_array;
+            return result;
         }
     };
 
@@ -148,28 +173,44 @@ namespace com::github::coderodde::directed_graph {
         std::unordered_map<Node, std::unordered_map<Node, Weight>> weight_map_;
 
     public:
-        void addWeight(Node const& tail, Node const& head, Weight weight) {
-            weight_map_[tail][head] = weight;
+        void addWeight(Node const& parent, Node const& child, Weight weight) {
+            weight_map_[parent][child] = weight;
         }
 
-        void removeWeight(Node const& tail, Node const& head) {
-            if (!weight_map_.contains(tail) 
-                || !weight_map_[tail].contains(head)) {
+        void removeWeight(Node const& parent, Node const& child) {
+            if (!weight_map_.contains(parent)
+                || !weight_map_[parent].contains(child)) {
                 return;
             }
 
-            weight_map_[tail].erase(head);
+            weight_map_[parent].erase(child);
         }
 
-        Weight getWeight(Node const& tail, Node const& head) {
-            if (!weight_map_.contains(tail)
-                || !weight_map_[tail].contains(head)) {
+        Weight getWeight(Node const& parent, Node const& child) {
+            if (!weight_map_.contains(parent)
+                || !weight_map_[parent].contains(child)) {
                 throw NonExistingArcException{
-                    buildNonExistingArcErrorMessage(tail, head)
+                    buildNonExistingArcErrorMessage(parent, child)
                 };
             }
 
-            return weight_map_[tail][head];
+            return weight_map_[parent][child];
+        }
+
+        boost::json::array toJSON() const {
+            boost::json::array weights;
+            for (const auto& [parent, arcs]: weight_map_) {
+                for (const auto& [child, arc_weight]: arcs) {
+                    boost::json::object arc;
+                    arc["from"] = parent;
+                    arc["to"] = child;
+                    arc["weight"] = arc_weight;
+
+                    weights.push_back(arc);
+                }
+            }
+
+            return weights;
         }
     };
 } // End of namespace com::github::coderodde::directed_graph.

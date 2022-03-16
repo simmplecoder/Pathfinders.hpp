@@ -7,6 +7,7 @@
 #include <random>
 #include <fmt/format.h>
 #include <boost/json.hpp>
+#include <CLI/CLI.hpp>
 
 constexpr std::size_t NUMBER_OF_NODES = 100 * 1000;
 constexpr std::size_t NUMBER_OF_ARCS = 500 * 1000;
@@ -108,9 +109,9 @@ public:
 };
 
 EuclideanCoordinates getRandomEuclideanCoordinates(
-    std::mt19937& mt,
-    std::uniform_real_distribution<double> x_coord_distribution,
-    std::uniform_real_distribution<double> y_coord_distribution) {
+        std::mt19937& mt,
+        std::uniform_real_distribution<double> x_coord_distribution,
+        std::uniform_real_distribution<double> y_coord_distribution) {
     double x = x_coord_distribution(mt);
     double y = y_coord_distribution(mt);
     EuclideanCoordinates coords{ x, y };
@@ -118,7 +119,7 @@ EuclideanCoordinates getRandomEuclideanCoordinates(
 }
 
 GraphData createRandomGraphData(std::size_t number_of_nodes,
-    std::size_t number_of_arcs) {
+        std::size_t number_of_arcs) {
     DirectedGraph<int> graph;
     DirectedGraphWeightFunction<int, double> weight_function;
     std::vector<int> node_vector;
@@ -168,25 +169,46 @@ GraphData createRandomGraphData(std::size_t number_of_nodes,
     return graph_data;
 }
 
-int main() {
+template <typename Node>
+struct Timing {
+    Node from;
+    Node to;
+    std::chrono::nanoseconds duration;
+
+    boost::json::object toJSON() const {
+        boost::json::object result;
+        result["from"] = from;
+        result["to"] = to;
+        result["duration_ns"] = duration.count();
+
+        return result;
+    }
+};
+
+int main(int argc, char* argv[]) {
+    CLI::App app{"benchmark showcase of the library"};
+    std::string output;
+    app.add_option("o", output, "output file path to write benchmark results to")
+        ->required(true)
+        ->check(CLI::NonexistentPath);
+
+    CLI11_PARSE(app, argc, argv)
+
     GraphData graph_data = createRandomGraphData(NUMBER_OF_NODES,
         NUMBER_OF_ARCS);
 
     const std::size_t seed = 40;
     std::mt19937 mt(seed);
-    const unsigned int run_count = 128;
-    std::vector<std::chrono::nanoseconds> timings;
+    const unsigned int run_count = 64;
+    std::vector<Timing<int>> timings;
     timings.reserve(run_count);
+
     for (std::size_t i = 0; i < run_count; ++i) {
         try {
             std::uniform_int_distribution<int> dist(0, NUMBER_OF_NODES - 1);
 
             int source_node = dist(mt);
             int target_node = dist(mt);
-
-            std::cout << "Source node: " << source_node << "\n";
-            std::cout << "Target node: " << target_node << "\n";
-            std::cout << "--- Dijkstra's algorithm: ---\n";
 
             auto start_time = std::chrono::steady_clock::now();
 
@@ -200,7 +222,10 @@ int main() {
 
             auto end_time = std::chrono::steady_clock::now();
 
-            timings.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time));
+            timings.push_back({source_node,
+                               target_node,
+                               std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time)});
+            fmt::print("path from {} to {} is {} units long\n", source_node, target_node, path.distance());
         }
         catch (NodeNotPresentInGraphException const &err) {
             std::cout << err.what() << "\n";
@@ -210,40 +235,23 @@ int main() {
         }
     }
 
-    std::sort(timings.begin(), timings.end());
-    auto lowest = timings.front();
-    auto highest = timings.back();
-    auto median = timings[run_count / 2];
-    auto mean = std::accumulate(timings.begin(), timings.end(), std::chrono::nanoseconds(0)) / run_count;
-    fmt::print("runtimes: lowest={}ns, highest={}ns, median={}ns, mean={}ns", lowest.count(), highest.count(), median.count(), mean.count());
-    /*
-    // Used for debugging aid:
-    DirectedGraph g2;
-    DirectedGraphWeightFunction w2;
+    boost::json::object result;
+    result["seed"] = seed;
+    result["graph"] = graph_data.getGraph().toJSON();
+    result["run_count"] = run_count;
 
-    g2.addNode(1);
-    g2.addNode(2);
-    g2.addNode(3);
+    boost::json::array timings_array;
+    for (const auto& timing: timings) {
+        timings_array.push_back(timing.toJSON());
+    }
+    result["timings"] = std::move(timings_array);
 
-    g2.addArc(1, 2);
-    g2.addArc(2, 3);
+    auto result_str = boost::json::serialize(result);
+    std::ofstream output_file(output);
+    if (!output_file) {
+        fmt::print(stderr, "failed to open output file, printing to STDOUT\n");
+        std::cout << result_str << '\n';
+    }
 
-    w2.addWeight(1, 2, 1.0);
-    w2.addWeight(2, 3, 2.0);
-
-    std::unordered_map<int, EuclideanCoordinates> coordinate_map;
-    coordinate_map[1] = EuclideanCoordinates(0, 0);
-    coordinate_map[2] = EuclideanCoordinates(0.5, 0.5);
-    coordinate_map[3] = EuclideanCoordinates(1, 1);
-
-    MyHeuristicFunction hf2(coordinate_map);
-    int source_node = 1;
-    int target_node = 3;
-    runBidirectionalAstarAlgorithm<int, double>(
-        g2, 
-        w2, 
-        &hf2, 
-        source_node, 
-        target_node);
-        */
+    output_file << result_str << '\n';
 }
