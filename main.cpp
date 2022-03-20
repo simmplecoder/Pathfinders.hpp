@@ -203,6 +203,7 @@ int main(int argc, char* argv[]) {
     std::vector<Timing<int>> timings;
     timings.reserve(run_count);
 
+    auto all_start = std::chrono::steady_clock::now();
     for (std::size_t i = 0; i < run_count; ++i) {
         try {
             std::uniform_int_distribution<int> dist(0, NUMBER_OF_NODES - 1);
@@ -234,11 +235,13 @@ int main(int argc, char* argv[]) {
             std::cout << err.what() << "\n";
         }
     }
+    auto all_end = std::chrono::steady_clock::now();
 
     boost::json::object result;
     result["seed"] = seed;
     result["graph"] = graph_data.getGraph().toJSON();
     result["run_count"] = run_count;
+    result["total_time_ns"] = std::chrono::duration_cast<std::chrono::nanoseconds>(all_end - all_start).count();
 
     boost::json::array timings_array;
     for (const auto& timing: timings) {
