@@ -3,6 +3,10 @@ fmt/8.1.1
 boost/1.78.0
 spdlog/1.9.2
 cli11/2.1.2
+catch2/2.13.8
 
 [generators]
 cmake_find_package
+
+[options]
+catch2:with_main=True

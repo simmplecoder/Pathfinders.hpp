@@ -1,7 +1,7 @@
 #ifndef COM_GITHUB_CODERODDE_GRAPH_PATHFINDERS_BI_DIJKSTRA_HPP
 #define COM_GITHUB_CODERODDE_GRAPH_PATHFINDERS_BI_DIJKSTRA_HPP
 
-#include "DirectedGraph.hpp"
+#include "include/pathfinders/directed_graph.hpp"
 #include "Pathfinders.SharedUtils.hpp"
 #include <iostream>
 #include <limits>

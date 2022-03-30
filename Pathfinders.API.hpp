@@ -1,9 +1,9 @@
 #ifndef COM_GITHUB_CODERODDE_GRAPH_PATHFINDERS_API_HPP
 #define COM_GITHUB_CODERODDE_GRAPH_PATHFINDERS_API_HPP
 
-#include "DirectedGraph.hpp"
+#include "include/pathfinders/directed_graph.hpp"
 #include "Pathfinders.Astar.hpp"
-#include "Pathfinders.Dijkstra.hpp"
+#include "pathfinders/djikstra.hpp"
 #include "Pathfinders.BiDijkstra.hpp"
 #include "Pathfinders.NBAstar.hpp"
 #include "Pathfinders.SharedUtils.hpp"

@@ -1,7 +1,7 @@
 #ifndef COM_GITHUB_CODERODDE_PATHFINDERS_UTIL_HPP
 #define COM_GITHUB_CODERODDE_PATHFINDERS_UTIL_HPP
 
-#include "DirectedGraph.hpp"
+#include "include/pathfinders/directed_graph.hpp"
 #include <queue>
 #include <optional>
 #include <stdexcept>
@@ -98,29 +98,11 @@ namespace com::github::coderodde::pathfinders::util {
 
     template<typename Node = int, typename Weight = double>
     struct HeapNode {
-    private:
         Weight distance_;
-        Node element_;
-
-    public:
-        HeapNode(Node const& element, Weight const& distance)
-            :
-            distance_{ distance },
-            element_{ element }
-        {
-
-        }
+        typename DirectedGraph<Node>::Iterator element_;
 
         bool operator<(const HeapNode<Node, Weight>& other) const noexcept {
             return distance_ > other.distance_;
-        }
-
-        [[nodiscard]] Node getElement() const noexcept {
-            return element_;
-        }
-
-        [[nodiscard]] Weight getDistance() const noexcept {
-            return distance_;
         }
     };
 
@@ -128,9 +110,9 @@ namespace com::github::coderodde::pathfinders::util {
     class HeapNodeComparator {
     public:
 
-        bool operator()(HeapNode<Node, Weight>* first,
-            HeapNode<Node, Weight>* second) {
-            return first->getDistance() > second->getDistance();
+        bool operator()(const HeapNode<Node, Weight>& first,
+            const HeapNode<Node, Weight>& second) {
+            return first.distance_ > second.distance_;
         }
     };
 
@@ -269,9 +251,7 @@ namespace com::github::coderodde::pathfinders::util {
 
     template<typename Node = int, typename Weight = double>
     void cleanPriorityQueue(
-        std::priority_queue<HeapNode<Node, Weight>*,
-        std::vector<HeapNode<Node, Weight>*>,
-        HeapNodeComparator<Node, Weight>>&queue) {
+        std::priority_queue<HeapNode<Node, Weight>*, std::vector<HeapNode<Node, Weight>*>, HeapNodeComparator<Node, Weight>>& queue) {
         while (!queue.empty()) {
             HeapNode<Node, Weight>* heap_node = queue.top();
             queue.pop();

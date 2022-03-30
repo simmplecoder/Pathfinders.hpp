@@ -1,6 +1,7 @@
-#include "DirectedGraph.hpp"
-#include "Pathfinders.SharedUtils.hpp"
-#include "Pathfinders.API.hpp"
+#include "include/pathfinders/directed_graph.hpp"
+#include "pathfinders/djikstra.hpp"
+//#include "Pathfinders.SharedUtils.hpp"
+//#include "Pathfinders.API.hpp"
 #include <chrono>
 #include <cstddef>
 #include <iostream>
@@ -14,10 +15,14 @@ constexpr std::size_t NUMBER_OF_ARCS = 500 * 1000;
 constexpr double SPACE_WIDTH = 10000.0;
 constexpr double SPACE_HEIGHT = 10000.0;
 constexpr double DISTANCE_FACTOR = 1.1;
+constexpr double MIN_WEIGHT = 1.0;
+constexpr double MAX_WEIGHT = 100.0;
 
-using namespace com::github::coderodde::directed_graph;
-using namespace com::github::coderodde::pathfinders;
-using namespace com::github::coderodde::pathfinders::api;
+
+
+//using namespace com::github::coderodde::directed_graph;
+//using namespace com::github::coderodde::pathfinders;
+//using namespace com::github::coderodde::pathfinders::api;
 
 class EuclideanCoordinates {
 private:
@@ -77,36 +82,36 @@ public:
         return point1.distanceTo(point2);
     }
 };
-
-class GraphData {
-private:
-    DirectedGraph<int> graph_;
-    DirectedGraphWeightFunction<int, double> weight_function_;
-    MyHeuristicFunction heuristic_function_;
-
-public:
-    GraphData(
-        DirectedGraph<int> graph,
-        DirectedGraphWeightFunction<int, double> weight_function,
-        MyHeuristicFunction heuristic_function)
-        :
-        graph_{ graph },
-        weight_function_{ weight_function },
-        heuristic_function_{ heuristic_function }
-    {}
-
-    DirectedGraph<int>& getGraph() {
-        return graph_;
-    }
-
-    DirectedGraphWeightFunction<int, double>& getWeightFunction() {
-        return weight_function_;
-    }
-
-    HeuristicFunction<int, double>& getHeuristicFunction() {
-        return heuristic_function_;
-    }
-};
+//
+//class GraphData {
+//private:
+//    DirectedGraph<int> graph_;
+//    DirectedGraphWeightFunction<int, double> weight_function_;
+//    MyHeuristicFunction heuristic_function_;
+//
+//public:
+//    GraphData(
+//        DirectedGraph<int> graph,
+//        DirectedGraphWeightFunction<int, double> weight_function,
+//        MyHeuristicFunction heuristic_function)
+//        :
+//        graph_{ graph },
+//        weight_function_{ weight_function },
+//        heuristic_function_{ heuristic_function }
+//    {}
+//
+//    DirectedGraph<int>& getGraph() {
+//        return graph_;
+//    }
+//
+//    DirectedGraphWeightFunction<int, double>& getWeightFunction() {
+//        return weight_function_;
+//    }
+//
+//    HeuristicFunction<int, double>& getHeuristicFunction() {
+//        return heuristic_function_;
+//    }
+//};
 
 EuclideanCoordinates getRandomEuclideanCoordinates(
         std::mt19937& mt,
@@ -118,55 +123,42 @@ EuclideanCoordinates getRandomEuclideanCoordinates(
     return coords;
 }
 
-GraphData createRandomGraphData(std::size_t number_of_nodes,
-        std::size_t number_of_arcs) {
-    DirectedGraph<int> graph;
-    DirectedGraphWeightFunction<int, double> weight_function;
-    std::vector<int> node_vector;
-    node_vector.reserve(number_of_nodes);
+struct graph_type {
+    using vertex_set_t = pathfinders::frozen_vertex_set<int>;
+    vertex_set_t vertices;
+    pathfinders::directed_weighted_edge_set<vertex_set_t, double> weights;
+};
+
+graph_type createRandomGraphData(std::size_t number_of_nodes,
+                                 std::size_t number_of_arcs) {
     const std::size_t random_seed = 38;
     std::mt19937 mt(random_seed);
     std::uniform_int_distribution<std::size_t>
         uniform_distribution(0, number_of_nodes - 1);
 
-    std::uniform_real_distribution<double> x_coord_distribution(0, SPACE_WIDTH);
-    std::uniform_real_distribution<double> y_coord_distribution(0, SPACE_HEIGHT);
+    std::uniform_real_distribution<double> weight_distribution(MIN_WEIGHT, MAX_WEIGHT);
 
     std::unordered_map<int, EuclideanCoordinates> coordinate_map;
 
-    for (size_t node_id = 0; node_id < number_of_nodes; ++node_id) {
-        graph.addNode((int)node_id);
-        node_vector.push_back((int)node_id);
-        EuclideanCoordinates coords =
-            getRandomEuclideanCoordinates(
-                mt,
-                x_coord_distribution,
-                y_coord_distribution);
-
-        coordinate_map[(int)node_id] = coords;
+    pathfinders::vertex_set<int> vertices;
+    for (std::size_t node_id = 0; node_id < number_of_nodes; ++node_id) {
+        vertices.insert(static_cast<int>(node_id));
     }
 
+    auto frozen_vertices = pathfinders::frozen_vertex_set<int>(std::move(vertices));
+    auto edges = pathfinders::directed_weighted_edge_set<decltype(frozen_vertices), double>(frozen_vertices);
     for (size_t i = 0; i < number_of_arcs; ++i) {
         std::size_t tail_index = uniform_distribution(mt);
         std::size_t head_index = uniform_distribution(mt);
-        int tail = node_vector[tail_index];
-        int head = node_vector[head_index];
-        EuclideanCoordinates tail_coords = coordinate_map[tail];
-        EuclideanCoordinates head_coords = coordinate_map[head];
-        graph.addArc(tail, head);
-        weight_function.addWeight(tail,
-            head,
-            tail_coords.distanceTo(head_coords)
-            * DISTANCE_FACTOR);
+        edges.add_edge(frozen_vertices.iterator_for(static_cast<int>(head_index)).value(),
+                       frozen_vertices.iterator_for(static_cast<int>(tail_index)).value(),
+                       weight_distribution(mt));
     }
 
-    MyHeuristicFunction heuristic_function{ coordinate_map };
-    GraphData graph_data(
-        graph,
-        weight_function,
-        heuristic_function);
-
-    return graph_data;
+    return graph_type {
+        .vertices = std::move(frozen_vertices),
+        .weights = std::move(edges)
+    };
 }
 
 template <typename Node>
@@ -194,8 +186,8 @@ int main(int argc, char* argv[]) {
 
     CLI11_PARSE(app, argc, argv)
 
-    GraphData graph_data = createRandomGraphData(NUMBER_OF_NODES,
-        NUMBER_OF_ARCS);
+    graph_type graph_data = createRandomGraphData(NUMBER_OF_NODES,
+                                                  NUMBER_OF_ARCS);
 
     const std::size_t seed = 40;
     std::mt19937 mt(seed);
@@ -212,6 +204,7 @@ int main(int argc, char* argv[]) {
             int target_node = dist(mt);
 
             auto start_time = std::chrono::steady_clock::now();
+            pathfinders::directed_weighted_path<int, double> path;
 
             Path<int, double> path =
                     findShortestPath()
@@ -257,4 +250,5 @@ int main(int argc, char* argv[]) {
     }
 
     output_file << result_str << '\n';
+    std::cout << output << '\n';
 }
