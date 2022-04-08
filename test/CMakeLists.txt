@@ -3,11 +3,12 @@ include(Catch)
 
 set(test_names
         basic_graph_tests
-        djikstra_tests)
+        djikstra_tests
+        basic_serialization_tests)
 
 foreach(test_name ${test_names})
     add_executable(${test_name} ${test_name}.cpp)
-    target_link_libraries(${test_name} PUBLIC Catch2::Catch2WithMain pathfinders)
+    target_link_libraries(${test_name} PUBLIC Catch2::Catch2WithMain pathfinders fmt::fmt)
     catch_discover_tests(${test_name})
 endforeach()
 

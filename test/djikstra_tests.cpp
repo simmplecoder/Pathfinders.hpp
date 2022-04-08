@@ -19,3 +19,5 @@ TEST_CASE("basic one edge Djikstra test") {
     REQUIRE(edge.get_from() == frozen_vertices.iterator_for(0));
     REQUIRE(edge.get_weight() == 1.0);
 }
+
+

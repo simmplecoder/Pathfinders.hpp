@@ -34,22 +34,27 @@ namespace pathfinders {
             return frozen_vertices.count(vertex) == 1;
         }
 
-        std::optional<iterator> iterator_for(const ValueType& vertex) const noexcept {
-            auto pos = frozen_vertices.find(vertex);
-            if (pos == frozen_vertices.end()) {
-                return {};
-            } else {
-                return pos;
-            }
+        iterator iterator_for(const ValueType& vertex) const noexcept {
+            return frozen_vertices.find(vertex);
+        }
+
+        iterator begin() const noexcept {
+            return frozen_vertices.begin();
+        }
+
+        iterator end() const noexcept {
+            return frozen_vertices.end();
+        }
+
+        std::size_t size() const noexcept {
+            return frozen_vertices.size();
         }
     };
 
-    template <typename FrozenGraph, typename WeightType>
+    template <typename VertexIterator, typename WeightType>
     class directed_weighted_edge_set {
-        const FrozenGraph* frozen_graph;
-
     public:
-        using vertex_iterator_type = typename FrozenGraph::iterator;
+        using vertex_iterator_type = VertexIterator;
         using weight_type = WeightType;
 
         class edge_type {
@@ -94,9 +99,7 @@ namespace pathfinders {
             friend directed_weighted_edge_set;
         };
 
-        directed_weighted_edge_set(const FrozenGraph& target):
-                frozen_graph(std::addressof(target))
-        {}
+        directed_weighted_edge_set() = default;
 
         bool add_edge(vertex_iterator_type from,
                       vertex_iterator_type to,
@@ -127,6 +130,30 @@ namespace pathfinders {
                     });
 
             return std::span<const edge_type, std::dynamic_extent>(edge_list_start, edge_list_end);
+        }
+
+        typename boost::container::flat_set<edge_type>::iterator begin() {
+            return edges.begin();
+        }
+
+        typename boost::container::flat_set<edge_type>::iterator end() {
+            return edges.end();
+        }
+
+        typename boost::container::flat_set<edge_type>::const_iterator cbegin() {
+            return edges.cbegin();
+        }
+
+        typename boost::container::flat_set<edge_type>::const_iterator cend() {
+            return edges.cend();
+        }
+
+        typename boost::container::flat_set<edge_type>::iterator begin() const {
+            return edges.cbegin();
+        }
+
+        typename boost::container::flat_set<edge_type>::iterator end() const {
+            return edges.cend();
         }
 
     private:

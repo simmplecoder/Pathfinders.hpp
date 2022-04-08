@@ -26,9 +26,9 @@ TEST_CASE("vertex comparison after insertion") {
     }
 
     auto frozen_vertices = pathfinders::frozen_vertex_set<int>(std::move(vertices));
-    auto iterator0_0 = frozen_vertices.iterator_for(0).value();
-    auto iterator0_1 = frozen_vertices.iterator_for(0).value();
-    auto iterator1_0 = frozen_vertices.iterator_for(1).value();
+    auto iterator0_0 = frozen_vertices.iterator_for(0);
+    auto iterator0_1 = frozen_vertices.iterator_for(0);
+    auto iterator1_0 = frozen_vertices.iterator_for(1);
     REQUIRE(iterator0_0 == iterator0_1);
     REQUIRE_FALSE(iterator0_0 == iterator1_0);
     REQUIRE_FALSE(iterator0_1 == iterator1_0);
@@ -41,10 +41,10 @@ TEST_CASE("edge insertion test") {
     }
 
     auto frozen_vertices = pathfinders::frozen_vertex_set<int>(std::move(vertices));
-    pathfinders::directed_weighted_edge_set<decltype(frozen_vertices), double> edges(frozen_vertices);
-    edges.add_edge(frozen_vertices.iterator_for(0).value(), frozen_vertices.iterator_for(1).value(), 1.0);
-    edges.add_edge(frozen_vertices.iterator_for(0).value(), frozen_vertices.iterator_for(2).value(), 1.0);
-    auto neighbor_list = edges.get_outgoing_edge_list(frozen_vertices.iterator_for(0).value());
+    pathfinders::directed_weighted_edge_set<decltype(frozen_vertices)::iterator, double> edges;
+    edges.add_edge(frozen_vertices.iterator_for(0), frozen_vertices.iterator_for(1), 1.0);
+    edges.add_edge(frozen_vertices.iterator_for(0), frozen_vertices.iterator_for(2), 1.0);
+    auto neighbor_list = edges.get_outgoing_edge_list(frozen_vertices.iterator_for(0));
     REQUIRE(neighbor_list.size() == 2);
     REQUIRE(neighbor_list[0].get_weight() == 1.0);
     REQUIRE(neighbor_list[0].get_from() == frozen_vertices.iterator_for(0));
